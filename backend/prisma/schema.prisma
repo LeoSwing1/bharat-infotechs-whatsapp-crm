@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  client
+}
+
+enum CampaignStatus {
+  draft
+  scheduled
+  queued
+  processing
+  completed
+  paused
+  failed
+  cancelled
+}
+
+enum MessageStatus {
+  queued
+  draft_hold
+  processing
+  sent
+  delivered
+  read
+  failed
+}
+
+enum ConversationStatus {
+  open
+  closed
+}
+
+model Tenant {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  users       User[]
+  contacts    Contact[]
+  events      Event[]
+  templates   MessageTemplate[]
+  campaigns   Campaign[]
+  messages    Message[]
+  conversations Conversation[]
+  campaignRecipients CampaignRecipient[]
+  scheduledJobs ScheduledJob[]
+  whatsapp    WhatsAppConfiguration?
+  webhookEvents WebhookEvent[]
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  tenantId     Int
+  name         String
+  email        String
+  passwordHash String
+  role         UserRole  @default(client)
+  createdAt    DateTime  @default(now())
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaigns    Campaign[] @relation("CampaignCreator")
+  @@unique([tenantId, email])
+  @@index([tenantId, role])
+}
+
+model Contact {
+  id             Int       @id @default(autoincrement())
+  tenantId       Int
+  name           String
+  phone          String
+  email          String?
+  company        String?
+  designation    String?
+  eventId        Int?
+  eventDate      String?
+  venue          String?
+  link           String?
+  customFields   Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event          Event?    @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  recipients     CampaignRecipient[]
+  messages       Message[]
+  conversations  Conversation[]
+  @@unique([tenantId, phone])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, eventId])
+  @@index([tenantId, phone])
+}
+
+model Event {
+  id              Int       @id @default(autoincrement())
+  tenantId        Int
+  name            String
+  eventDate       String?
+  eventTime       String?
+  venue           String?
+  address         String?
+  description     String?
+  registrationUrl String?
+  status          String    @default("upcoming")
+  createdAt       DateTime  @default(now())
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts        Contact[]
+  campaigns       Campaign[]
+  @@index([tenantId, eventDate])
+}
+
+model MessageTemplate {
+  id             Int       @id @default(autoincrement())
+  tenantId       Int
+  name           String
+  category       String    @default("MARKETING")
+  language       String    @default("en_US")
+  status         String    @default("PENDING")
+  body           String
+  variables      Json?
+  metaTemplateId String?
+  metaName       String?
+  components     Json?
+  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime  @default(now())
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaigns      Campaign[]
+  @@unique([tenantId, name, language])
+  @@index([tenantId, category, status])
+}
+
+model Campaign {
+  id             Int             @id @default(autoincrement())
+  tenantId       Int
+  name           String
+  eventId        Int?
+  templateId     Int?
+  messageContent String?
+  mediaType      String          @default("none")
+  mediaUrl       String?
+  status         CampaignStatus  @default(draft)
+  scheduledAt    DateTime?
+  createdBy      Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event          Event?          @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  template       MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  creator        User?           @relation("CampaignCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  recipients     CampaignRecipient[]
+  messages       Message[]
+  scheduledJobs  ScheduledJob[]
+  @@index([tenantId, status, createdAt])
+}
+
+model CampaignRecipient {
+  id                  Int       @id @default(autoincrement())
+  tenantId            Int
+  campaignId          Int
+  contactId           Int
+  personalizedMessage String?
+  createdAt           DateTime  @default(now())
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign       Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact        Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  @@unique([campaignId, contactId])
+  @@index([tenantId, campaignId])
+}
+
+model Message {
+  id             Int           @id @default(autoincrement())
+  tenantId       Int
+  campaignId     Int?
+  contactId      Int?
+  phone          String
+  content        String?
+  metaMessageId  String?       @unique
+  status         MessageStatus @default(queued)
+  error          String?
+  metaErrorCode  String?
+  retryCount     Int           @default(0)
+  queuedAt       DateTime      @default(now())
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  readAt         DateTime?
+  failedAt       DateTime?
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign       Campaign?     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact        Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  statusLogs     MessageStatusLog[]
+  @@index([tenantId, status, queuedAt])
+  @@index([tenantId, campaignId, status])
+  @@index([tenantId, contactId, queuedAt])
+  @@index([tenantId, metaMessageId])
+}
+
+model MessageStatusLog {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  messageId Int
+  status    String
+  rawPayload Json?
+  createdAt DateTime @default(now())
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  @@index([tenantId, messageId, createdAt])
+}
+
+model Conversation {
+  id            Int                @id @default(autoincrement())
+  tenantId      Int
+  contactId     Int?
+  phone         String
+  contactName   String?
+  lastMessageAt DateTime?
+  status        ConversationStatus @default(open)
+  createdAt     DateTime           @default(now())
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact       Contact?            @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  messages      ConversationMessage[]
+  @@unique([tenantId, phone])
+  @@index([tenantId, lastMessageAt])
+}
+
+model ConversationMessage {
+  id             Int      @id @default(autoincrement())
+  tenantId       Int
+  conversationId Int
+  direction      String
+  content        String?
+  metaMessageId  String?
+  status         String   @default("sent")
+  createdAt      DateTime @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@index([tenantId, conversationId, createdAt])
+}
+
+model WhatsAppConfiguration {
+  id                 Int      @id @default(autoincrement())
+  tenantId           Int      @unique
+  businessAccountId  String?
+  phoneNumberId      String?
+  displayPhoneNumber String?
+  accessToken        String?
+  webhookVerifyToken String?
+  connectionStatus   String   @default("not_connected")
+  mode               String   @default("mock")
+  updatedAt          DateTime @updatedAt
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model ScheduledJob {
+  id         Int      @id @default(autoincrement())
+  tenantId   Int
+  campaignId Int
+  runAt      DateTime
+  status     String   @default("pending")
+  jobType    String   @default("campaign_send")
+  createdAt  DateTime @default(now())
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  @@index([tenantId, status, runAt])
+}
+
+model WebhookEvent {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int?
+  eventType   String?
+  eventKey    String   @unique
+  payload     Json
+  processed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  @@index([tenantId, createdAt])
+}
