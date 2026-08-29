@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { errorMessage } from '../lib/api';
 import ShaderBackground from '../components/ShaderBackground';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const { login } = useAuth();
@@ -59,7 +59,18 @@ export default function Login() {
           <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+          <div className="auth-links">
+  <Link to="/forgot-password">
+    Forgot password?
+  </Link>
+</div>
         </form>
+        <div className="auth-links">
+  Don't have an account?{' '}
+  <Link to="/signup">
+    Sign up
+  </Link>
+</div>
         <div style={{ marginTop: 18, textAlign: 'center', fontSize: 12, color: 'var(--color-text-muted)' }}>
           Demo access:{' '}
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => fillDemo('admin')}>Admin</button>

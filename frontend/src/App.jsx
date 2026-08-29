@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+
 import AppShell from './components/AppShell';
+
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
@@ -15,36 +18,119 @@ import CampaignReport from './pages/CampaignReport';
 import Settings from './pages/Settings';
 
 function RequireAuth({ children }) {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Checking authentication...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function PublicOnly({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+
+      {/* PUBLIC AUTH ROUTES */}
+
+      <Route
+        path="/login"
+        element={
+          <PublicOnly>
+            <Login />
+          </PublicOnly>
+        }
+      />
+
+      {/* PROTECTED CRM */}
+
       <Route
         path="/"
-        element={(
+        element={
           <RequireAuth>
             <AppShell />
           </RequireAuth>
-        )}
+        }
       >
         <Route index element={<Dashboard />} />
+
         <Route path="contacts" element={<Contacts />} />
+
         <Route path="events" element={<Events />} />
+
         <Route path="campaigns" element={<Campaigns />} />
-        <Route path="campaigns/new" element={<CampaignBuilder />} />
-        <Route path="campaigns/:id/edit" element={<CampaignBuilder />} />
+
+        <Route
+          path="campaigns/new"
+          element={<CampaignBuilder />}
+        />
+
+        <Route
+          path="campaigns/:id/edit"
+          element={<CampaignBuilder />}
+        />
+
         <Route path="templates" element={<Templates />} />
+
         <Route path="inbox" element={<Inbox />} />
+
         <Route path="reports" element={<Reports />} />
-        <Route path="reports/:id" element={<CampaignReport />} />
+
+        <Route
+          path="reports/:id"
+          element={<CampaignReport />}
+        />
+
         <Route path="settings" element={<Settings />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* UNKNOWN URL */}
+
+      <Route
+        path="*"
+        element={<Navigate to="/" replace />}
+      />
+
     </Routes>
   );
 }

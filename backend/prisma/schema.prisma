@@ -58,15 +58,17 @@ model Tenant {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  tenantId     Int
-  name         String
-  email        String
-  passwordHash String
-  role         UserRole  @default(client)
-  createdAt    DateTime  @default(now())
-  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  campaigns    Campaign[] @relation("CampaignCreator")
+  id                 Int                  @id @default(autoincrement())
+  tenantId           Int
+  name               String
+  email              String
+  passwordHash       String
+  role               UserRole             @default(client)
+  createdAt          DateTime             @default(now())
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaigns          Campaign[]           @relation("CampaignCreator")
+  passwordResetTokens PasswordResetToken[]
+
   @@unique([tenantId, email])
   @@index([tenantId, role])
 }
@@ -277,4 +279,17 @@ model WebhookEvent {
   createdAt   DateTime @default(now())
   tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   @@index([tenantId, createdAt])
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
 }
