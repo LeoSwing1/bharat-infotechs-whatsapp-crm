@@ -277,3 +277,219 @@ table.data-table tr:hover td { background: #fafcfc; }
 .api-dot{width:8px;height:8px;border-radius:50%;background:#b9781f}.api-dot.ok{background:#1f9d5c}.api-dot.error{background:#d64545}
 @media (max-width: 900px){.sidebar{width:190px}.page-body{padding:16px}.inbox-layout{grid-template-columns:240px 1fr}}
 @media (max-width: 700px){.app-shell{display:block}.sidebar{position:relative;width:100%;height:auto}.sidebar-nav{display:flex;overflow-x:auto}.sidebar-link{white-space:nowrap}.sidebar-footer{display:none}.topbar{padding:0 14px}.page-body{padding:12px}.field-row{grid-template-columns:1fr}.inbox-layout{grid-template-columns:1fr;height:auto}.conv-list{max-height:260px;border-right:0;border-bottom:1px solid var(--color-border)}.chat-panel{min-height:520px}}
+/* =========================================================
+   MOBILE APP SHELL
+   ========================================================= */
+
+.mobile-header,
+.mobile-nav {
+  display: none;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  .app-shell {
+    width: 100%;
+    min-height: 100vh;
+    display: block;
+    overflow-x: hidden;
+  }
+
+  /* Hide desktop sidebar */
+  .sidebar {
+    display: none !important;
+  }
+
+  /* -------------------------
+     MOBILE HEADER
+     ------------------------- */
+
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    width: 100%;
+    min-height: 68px;
+
+    padding: 12px 14px;
+    box-sizing: border-box;
+
+    background: #056b57;
+    color: white;
+
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .mobile-brand {
+    min-width: 0;
+  }
+
+  .mobile-brand-name {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .mobile-brand-subtitle {
+    margin-top: 3px;
+
+    font-size: 10px;
+    line-height: 1.2;
+
+    opacity: 0.78;
+  }
+
+  /* -------------------------
+     MOBILE LOGOUT
+     ------------------------- */
+
+  .mobile-logout {
+    flex-shrink: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    min-height: 38px;
+    padding: 0 11px;
+
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+
+    background: rgba(255,255,255,0.1);
+    color: white;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+  }
+
+  .mobile-logout:active {
+    transform: scale(0.97);
+  }
+
+  /* -------------------------
+     MOBILE NAVIGATION
+     ------------------------- */
+
+  .mobile-nav {
+    display: flex;
+
+    width: 100%;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    white-space: nowrap;
+
+    background: #075f4d;
+
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+
+    scrollbar-width: none;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-nav-link {
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    min-height: 48px;
+
+    padding: 0 15px;
+
+    color: rgba(255,255,255,0.82);
+
+    text-decoration: none;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    border-bottom: 3px solid transparent;
+  }
+
+  .mobile-nav-link.active {
+    color: white;
+    background: rgba(255,255,255,0.10);
+    border-bottom-color: white;
+  }
+
+  /* -------------------------
+     MAIN CONTENT
+     ------------------------- */
+
+  .main-content {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    overflow-x: hidden;
+  }
+
+  /* Prevent dashboard controls from creating
+     horizontal overflow */
+
+  .main-content * {
+    max-width: 100%;
+  }
+}
+
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+  .mobile-header {
+    min-height: 64px;
+    padding: 10px 12px;
+  }
+
+  .mobile-brand-name {
+    font-size: 16px;
+  }
+
+  .mobile-brand-subtitle {
+    font-size: 9px;
+  }
+
+  .mobile-logout {
+    min-height: 36px;
+    padding: 0 9px;
+    font-size: 11px;
+  }
+
+  .mobile-nav-link {
+    min-height: 46px;
+    padding: 0 13px;
+    font-size: 11px;
+  }
+}
