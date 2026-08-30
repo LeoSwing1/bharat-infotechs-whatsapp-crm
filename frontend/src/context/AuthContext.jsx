@@ -1,24 +1,45 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react';
+
 import api from '../lib/api';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const raw = localStorage.getItem('bharat_crm_user');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      localStorage.removeItem('bharat_crm_user');
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem('bharat_crm_user');
+
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+
+    if (!parsed || typeof parsed !== 'object') {
       return null;
     }
-  });
 
+    return parsed;
+  } catch (error) {
+    console.error('Invalid stored user:', error);
+
+    localStorage.removeItem('bharat_crm_user');
+
+    return null;
+  }
+}
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(getStoredUser);
   const [loading, setLoading] = useState(true);
 
   const clearAuth = useCallback(() => {
     localStorage.removeItem('bharat_crm_token');
     localStorage.removeItem('bharat_crm_user');
+
     setUser(null);
   }, []);
 
@@ -36,16 +57,35 @@ export function AuthProvider({ children }) {
 
     api.get('/auth/me')
       .then((res) => {
-        const validUser = res.data;
+        /*
+         * Backend returns:
+         *
+         * {
+         *   user: {...}
+         * }
+         *
+         * Therefore we must use res.data.user.
+         */
+        const validUser = res.data?.user;
+
+        if (!validUser || typeof validUser !== 'object') {
+          throw new Error('Invalid user response from server.');
+        }
+
+        const safeUser = {
+          ...validUser,
+          name: validUser.name || validUser.email || 'User',
+        };
 
         localStorage.setItem(
           'bharat_crm_user',
-          JSON.stringify(validUser)
+          JSON.stringify(safeUser)
         );
 
-        setUser(validUser);
+        setUser(safeUser);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Session validation failed:', error);
         clearAuth();
       })
       .finally(() => {
@@ -59,15 +99,28 @@ export function AuthProvider({ children }) {
       password,
     });
 
-    localStorage.setItem('bharat_crm_token', data.token);
+    if (!data?.token || !data?.user) {
+      throw new Error('Invalid login response from server.');
+    }
+
+    const safeUser = {
+      ...data.user,
+      name: data.user.name || data.user.email || 'User',
+    };
+
     localStorage.setItem(
-      'bharat_crm_user',
-      JSON.stringify(data.user)
+      'bharat_crm_token',
+      data.token
     );
 
-    setUser(data.user);
+    localStorage.setItem(
+      'bharat_crm_user',
+      JSON.stringify(safeUser)
+    );
 
-    return data.user;
+    setUser(safeUser);
+
+    return safeUser;
   }, []);
 
   const logout = useCallback(() => {

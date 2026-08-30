@@ -1,6 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, CalendarDays, Send, FileText, MessageCircle, BarChart3, Settings as SettingsIcon,
+  LayoutDashboard,
+  Users,
+  CalendarDays,
+  Send,
+  FileText,
+  MessageCircle,
+  BarChart3,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,42 +28,86 @@ export default function AppShell() {
 
   function handleLogout() {
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   }
 
-  const initials = user ? user.name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase() : '';
+  // Never assume name exists.
+  const displayName =
+    user?.name ||
+    user?.email ||
+    'User';
+
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'U';
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
+
         <div className="sidebar-brand">
           <h1>Bharat Infotechs</h1>
-          <p>Smart Business Software,<br />Built for Growth.</p>
+          <p>
+            Smart Business Software,
+            <br />
+            Built for Growth.
+          </p>
         </div>
+
         <nav className="sidebar-nav">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+              className={({ isActive }) =>
+                `sidebar-link${isActive ? ' active' : ''}`
+              }
             >
               <item.icon size={16} />
               {item.label}
             </NavLink>
           ))}
         </nav>
+
         <div className="sidebar-footer">
+
           <div className="sidebar-user">
-            <div className="sidebar-avatar">{initials}</div>
+            <div className="sidebar-avatar">
+              {initials}
+            </div>
+
             <div>
-              <div style={{ fontWeight: 600 }}>{user?.name}</div>
-              <div style={{ opacity: 0.7, fontSize: 11, textTransform: 'capitalize' }}>{user?.role}</div>
+              <div style={{ fontWeight: 600 }}>
+                {displayName}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.7,
+                  fontSize: 11,
+                  textTransform: 'capitalize',
+                }}
+              >
+                {user?.role || 'user'}
+              </div>
             </div>
           </div>
-          <button className="sidebar-logout" onClick={handleLogout}>Log out</button>
+
+          <button
+            className="sidebar-logout"
+            onClick={handleLogout}
+          >
+            Log out
+          </button>
+
         </div>
       </aside>
+
       <div className="main-content">
         <Outlet />
       </div>
